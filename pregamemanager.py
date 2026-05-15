@@ -29,6 +29,12 @@ class PreGameManager:
         self.already_hovered = False
         self.ranked_queue = None 
 
+    def _reset_state(self):
+        self.already_ban = False
+        self.already_pick = False
+        self.already_hovered = False
+        self.ranked_queue = None
+
     def setup_auto_accept(self):
         @self.connector.ws.register('/lol-matchmaking/v1/ready-check', event_types=('CREATE','UPDATE'))
         async def on_ready_check(connection, event):
@@ -58,7 +64,7 @@ class PreGameManager:
 
             if self.ranked_queue is None:
                 queue_id = event.data['queueId']
-                if queue_id not in [420, 440, 3110]:
+                if queue_id not in [420, 440]:
                     self.ranked_queue = False
                     return
                 else:
@@ -172,9 +178,11 @@ class PreGameManager:
 
         @self.connector.ws.register('/lol-champ-select/v1/session', event_types=("DELETE",))
         async def reset_control_variables(connection, event):
-            print('resetou')
-            self.already_pick = False
-            self.already_ban = False
-            self.already_hovered = False
-            self.ranked_queue = None
+            print('[CHAMP-SELECT] Sessão encerrada, resetando variáveis.')
+            self._reset_state()
+
+        @self.connector.close
+        async def on_lcu_close(connection):
+            print('[LCU] Desconectado. Aguardando LoL...')
+            self._reset_state()
         
